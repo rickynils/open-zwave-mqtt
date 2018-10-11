@@ -146,8 +146,9 @@ make_value_path(const string& prefix, const OpenZWave::ValueID& v)
 }
 
 void
-mqtt_publish(const string& prefix, const OpenZWave::ValueID& v)
+mqtt_publish(const options* opts, const OpenZWave::ValueID& v)
 {
+    int res;
     string value;
 
     if (!OpenZWave::Manager::Get()->GetValueAsString(v, &value)) {
@@ -160,54 +161,64 @@ mqtt_publish(const string& prefix, const OpenZWave::ValueID& v)
         return;
     }
 
-    auto topics = make_value_path(prefix, v);
+    auto topics = make_value_path(opts->mqtt_prefix, v);
 
-    int res = mosquitto_publish(mqtt_client, NULL, topics.first.c_str(),
-            value.size(), value.c_str(), 0, true);
-    if (res != 0) {
-        Log::Write(LogLevel_Error, v.GetNodeId(),
-            "Error while publishing message to MQTT topic '%s'", topics.first.c_str());
-    } else {
-        Log::Write(LogLevel_Debug, v.GetNodeId(), "MQTT PUBLISH: %s -> %s",
-            topics.first.c_str(), value.c_str());
+    if (opts->mqtt_name_topics) {
+        res = mosquitto_publish(mqtt_client, NULL, topics.first.c_str(),
+                value.size(), value.c_str(), 0, true);
+        if (res != 0) {
+            Log::Write(LogLevel_Error, v.GetNodeId(),
+                "Error while publishing message to MQTT topic '%s'", topics.first.c_str());
+        } else {
+            Log::Write(LogLevel_Debug, v.GetNodeId(), "MQTT PUBLISH: %s -> %s",
+                topics.first.c_str(), value.c_str());
+        }
     }
 
-    res = mosquitto_publish(mqtt_client, NULL, topics.second.c_str(),
-            value.size(), value.c_str(), 0, true);
-    if (res != 0) {
-        Log::Write(LogLevel_Error, v.GetNodeId(),
-            "Error while publishing message to MQTT topic '%s'", topics.second.c_str());
-    } else {
-        Log::Write(LogLevel_Debug, v.GetNodeId(), "MQTT PUBLISH: %s -> %s",
-            topics.second.c_str(), value.c_str());
+    if (opts->mqtt_id_topics) {
+        res = mosquitto_publish(mqtt_client, NULL, topics.second.c_str(),
+                value.size(), value.c_str(), 0, true);
+        if (res != 0) {
+            Log::Write(LogLevel_Error, v.GetNodeId(),
+                "Error while publishing message to MQTT topic '%s'", topics.second.c_str());
+        } else {
+            Log::Write(LogLevel_Debug, v.GetNodeId(), "MQTT PUBLISH: %s -> %s",
+                topics.second.c_str(), value.c_str());
+        }
     }
 }
 
 void
-mqtt_subscribe(const string& prefix, const OpenZWave::ValueID& v)
+mqtt_subscribe(const options* opts, const OpenZWave::ValueID& v)
 {
+    int res;
+
     // Ignore read only values
     if (OpenZWave::Manager::Get()->IsValueReadOnly(v)) {
         return;
     }
 
     // Make string representation of changeable parameter
-    auto paths = make_value_path(prefix, v);
+    auto paths = make_value_path(opts->mqtt_prefix, v);
     string ep1 = paths.first + "/set";
     string ep2 = paths.second + "/set";
 
     // subscribe to both topics - name / id based
-    int res = mosquitto_subscribe(mqtt_client, NULL, ep1.c_str(), 0);
-    if (res != 0) {
-        throw runtime_error("mosquitto_subscribe failed");
+    if (opts->mqtt_name_topics) {
+        res = mosquitto_subscribe(mqtt_client, NULL, ep1.c_str(), 0);
+        if (res != 0) {
+            throw runtime_error("mosquitto_subscribe failed");
+        }
+        endpoints.insert(make_pair(ep1, v));
     }
-    endpoints.insert(make_pair(ep1, v));
 
-    res = mosquitto_subscribe(mqtt_client, NULL, ep2.c_str(), 0);
-    if (res != 0) {
-        throw runtime_error("mosquitto_subscribe failed");
+    if (opts->mqtt_id_topics) {
+        res = mosquitto_subscribe(mqtt_client, NULL, ep2.c_str(), 0);
+        if (res != 0) {
+            throw runtime_error("mosquitto_subscribe failed");
+        }
+        endpoints.insert(make_pair(ep2, v));
     }
-    endpoints.insert(make_pair(ep2, v));
 }
 
 // topic -> custom function subscriber
