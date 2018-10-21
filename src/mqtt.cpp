@@ -191,8 +191,6 @@ mqtt_publish(const options* opts, const OpenZWave::ValueID& v)
 void
 mqtt_subscribe(const options* opts, const OpenZWave::ValueID& v)
 {
-    int res;
-
     // Ignore read only values
     if (OpenZWave::Manager::Get()->IsValueReadOnly(v)) {
         return;
@@ -200,24 +198,25 @@ mqtt_subscribe(const options* opts, const OpenZWave::ValueID& v)
 
     // Make string representation of changeable parameter
     auto paths = make_value_path(opts->mqtt_prefix, v);
-    string ep1 = paths.first + "/set";
-    string ep2 = paths.second + "/set";
 
-    // subscribe to both topics - name / id based
+    // Subscribe to name based topic, if enabled
     if (opts->mqtt_name_topics) {
-        res = mosquitto_subscribe(mqtt_client, NULL, ep1.c_str(), 0);
+        string ep = paths.first + "/set";
+        int res = mosquitto_subscribe(mqtt_client, NULL, ep.c_str(), 0);
         if (res != 0) {
             throw runtime_error("mosquitto_subscribe failed");
         }
-        endpoints.insert(make_pair(ep1, v));
+        endpoints.insert(make_pair(ep, v));
     }
 
+    // Subscribe to id based topic, if enabled
     if (opts->mqtt_id_topics) {
-        res = mosquitto_subscribe(mqtt_client, NULL, ep2.c_str(), 0);
+        string ep = paths.second + "/set";
+        int res = mosquitto_subscribe(mqtt_client, NULL, ep.c_str(), 0);
         if (res != 0) {
             throw runtime_error("mosquitto_subscribe failed");
         }
-        endpoints.insert(make_pair(ep2, v));
+        endpoints.insert(make_pair(ep, v));
     }
 }
 
