@@ -91,6 +91,7 @@ int main(int argc, const char* argv[])
         OpenZWave::Options::Get()->AddOptionInt("SaveLogLevel", opt.log_level);
         OpenZWave::Options::Get()->AddOptionInt("QueueLogLevel", opt.log_level);
         OpenZWave::Options::Get()->AddOptionInt("DumpTrigger", OpenZWave::LogLevel_Error);
+        OpenZWave::Options::Get()->AddOptionBool("AppendLogFile", true);
         OpenZWave::Options::Get()->Lock();
 
         OpenZWave::Manager::Create();
