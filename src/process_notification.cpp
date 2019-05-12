@@ -60,7 +60,11 @@ process_notification(const Notification* n, void* ctx)
 
         case Notification::Type_ValueRefreshed:
         {
-            // We don't care about the same values ("refresh") today.
+            if (publishing) {
+                // check / disable value polling
+                polling_disable(n->GetValueID());
+                mqtt_publish(opts, n->GetValueID());
+            }
             break;
         }
 
