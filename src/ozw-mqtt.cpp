@@ -22,6 +22,22 @@ save_config(const string& value)
     printf("OZW configuration saved.\n");
 }
 
+// Callback for MQTT include devices topic
+void
+start_inclusion(const string& value)
+{
+    OpenZWave::Manager::Get()->AddNode(home_id, false);
+    printf("OZW inclusion mode activated.\n");
+}
+
+// Callback for MQTT heal network topic
+void
+heal_network(const string& value)
+{
+    OpenZWave::Manager::Get()->HealNetwork(home_id, true);
+    printf("OZW heal network activated.\n");
+}
+
 void
 signal_handler(int s)
 {
@@ -60,6 +76,8 @@ int main(int argc, const char* argv[])
             mqtt_connect(opt.mqtt_client_id, opt.mqtt_host, opt.mqtt_port, opt.mqtt_user, opt.mqtt_passwd);
             // Register save config mqtt topic
             mqtt_subscribe(opt.mqtt_prefix, "ozw/save_config", save_config);
+            mqtt_subscribe(opt.mqtt_prefix, "ozw/heal_network", heal_network);
+            mqtt_subscribe(opt.mqtt_prefix, "ozw/start_inclusion", start_inclusion);
         } else {
             printf("Print MQTT topics only mode selected, gathering nodes information.\n");
             printf("This will take awhile (up to few minutes, depending on amount of nodes)...\n");
