@@ -28,7 +28,7 @@ mqtt_message_callback(struct mosquitto* mosq, void* userdata, const struct mosqu
     // Custom endpoints (topic -> function)
     auto cit = endpoints_custom.find(topic);
     if (cit != endpoints_custom.end()) {
-        cit->second(value);
+        cit->second(topic, value);
         return;
     }
 

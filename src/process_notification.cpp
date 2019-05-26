@@ -1,4 +1,5 @@
 
+#include <unistd.h>
 #include <openzwave/Manager.h>
 #include <openzwave/platform/Log.h>
 #include "process_notification.h"
@@ -11,6 +12,20 @@ using namespace OpenZWave;
 
 uint32_t home_id = 0;
 bool publishing = false;
+
+void
+set_config_param(const std::string& topic, const std::string& value)
+{
+    std::size_t i = topic.find_last_of("/");
+    std::string s_node = topic.substr(i+1);
+    std::size_t j = value.find_last_of("=");
+    std::string s_val = value.substr(j+1);
+    std::string s_param = value.substr(0,j);
+
+    printf("Setting config param %s of node %s to %s\n", s_param.c_str(), s_node.c_str(), s_val.c_str());
+
+    OpenZWave::Manager::Get()->SetConfigParam(home_id, atoi(s_node.c_str()), atoi(s_param.c_str()), atoi(s_val.c_str()));
+}
 
 void
 process_notification(const Notification* n, void* ctx)
@@ -34,6 +49,7 @@ process_notification(const Notification* n, void* ctx)
         case Notification::Type_NodeAdded:
         {
             node_add(hid, nid);
+            mqtt_subscribe(opts->mqtt_prefix, "ozw/config/" + to_string(nid), set_config_param);
             break;
         }
 
