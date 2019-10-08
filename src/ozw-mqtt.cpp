@@ -22,6 +22,14 @@ start_inclusion(const string& topic, const string& value)
     printf("OZW inclusion mode activated.\n");
 }
 
+// Callback for MQTT exclude devices topic
+void
+start_exclusion(const string& topic, const string& value)
+{
+    OpenZWave::Manager::Get()->RemoveNode(home_id);
+    printf("OZW exclusion mode activated.\n");
+}
+
 // Callback for MQTT heal network topic
 void
 heal_network(const string& topic, const string& value)
@@ -68,6 +76,7 @@ int main(int argc, const char* argv[])
             // Register save config mqtt topic
             mqtt_subscribe(opt.mqtt_prefix, "ozw/heal_network", heal_network);
             mqtt_subscribe(opt.mqtt_prefix, "ozw/start_inclusion", start_inclusion);
+            mqtt_subscribe(opt.mqtt_prefix, "ozw/start_exclusion", start_exclusion);
         } else {
             printf("Print MQTT topics only mode selected, gathering nodes information.\n");
             printf("This will take awhile (up to few minutes, depending on amount of nodes)...\n");
